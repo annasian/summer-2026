@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Summer 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root{
+    --ink:#1a1a1a;
+    --muted:#6b6b6b;
+    --hairline:#e5e5e5;
+    --bg:#f6f5f0;
+    --card:#ffffff;
+    --accent:#3d6230;
+    --accent-soft:#e7f0e3;
+    --warn:#c2410c;
+
+    --loc-nyc:#888780;
+    --loc-nyc-soft:#eeede8;
+    --loc-vt:#3d6230;
+    --loc-vt-soft:#e7f0e3;
+    --loc-me:#1d4ed8;
+    --loc-me-soft:#e6efff;
+    --loc-mtl:#b45309;
+    --loc-mtl-soft:#fdf2e3;
+    --loc-transit:#7c3aed;
+    --loc-transit-soft:#f1ebfb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{display:flex;flex-direction:column;min-height:100vh}
+  header{padding:18px 22px 12px;background:var(--bg);border-bottom:1px solid var(--hairline);position:sticky;top:0;z-index:1000}
+  .kicker{font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;font-weight:600}
+  h1{font-size:22px;font-weight:800;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin:0 -22px;padding-left:22px;padding-right:22px;scrollbar-width:thin}
+  .pill{flex:none;padding:7px 12px;border-radius:999px;border:1.5px solid var(--hairline);background:#fff;color:var(--ink);font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .pill .ds{font-size:10.5px;color:var(--muted);font-weight:500}
+  .pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pill.active .ds{color:rgba(255,255,255,.7)}
+  main{flex:1;padding:22px;max-width:920px;margin:0 auto;width:100%}
+  .panel{background:var(--card);border-radius:14px;border:0.5px solid var(--hairline);padding:22px;margin-bottom:18px}
+  .panel h2{font-size:18px;font-weight:700;margin:0 0 10px;letter-spacing:-.01em}
+  .panel p{font-size:13.5px;line-height:1.55;color:var(--ink);margin:0 0 10px}
+  .sect{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);font-weight:700;margin:18px 0 8px}
+  .sect:first-child{margin-top:0}
+  .meta{display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:13px;line-height:1.5}
+  .meta .k{color:var(--muted);font-weight:600}
+  .meta .v{color:var(--ink)}
+  .meta .v b{font-weight:600}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-right:4px;margin-bottom:4px}
+  .tag-nyc{background:var(--loc-nyc-soft);color:#3a3a35}
+  .tag-vt{background:var(--loc-vt-soft);color:var(--loc-vt)}
+  .tag-me{background:var(--loc-me-soft);color:var(--loc-me)}
+  .tag-mtl{background:var(--loc-mtl-soft);color:var(--loc-mtl)}
+  .tag-transit{background:var(--loc-transit-soft);color:var(--loc-transit)}
+
+  .ww-wrap{overflow-x:auto;margin:0 -22px;padding:0 22px}
+  .ww{border-collapse:collapse;width:100%;min-width:740px;font-size:11.5px}
+  .ww th, .ww td{border:1px solid var(--hairline);padding:6px 6px;text-align:center;vertical-align:middle}
+  .ww thead th{background:#fafaf6;color:var(--muted);font-weight:600;font-size:10.5px;letter-spacing:.02em}
+  .ww thead th .dnum{display:block;font-size:13px;color:var(--ink);font-weight:700;margin-top:2px}
+  .ww tbody th{text-align:left;background:#fafaf6;font-weight:700;color:var(--ink);padding:8px 10px;font-size:12px;min-width:64px}
+  .ww .c{font-weight:600;color:#1a1a1a;font-size:11.5px;padding:5px 4px}
+  .ww .c.nyc{background:var(--loc-nyc-soft);color:#3a3a35}
+  .ww .c.vt{background:var(--loc-vt-soft);color:var(--loc-vt)}
+  .ww .c.me{background:var(--loc-me-soft);color:var(--loc-me)}
+  .ww .c.mtl{background:var(--loc-mtl-soft);color:var(--loc-mtl)}
+  .ww .c.transit{background:var(--loc-transit-soft);color:var(--loc-transit)}
+  .ww .c .sub{display:block;font-size:9.5px;font-weight:500;opacity:.75;margin-top:1px}
+  .ww .today{outline:2px solid var(--warn);outline-offset:-2px}
+
+  .tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+  .track{background:#fafaf6;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.5}
+  .track h3{font-size:13px;margin:0 0 4px;font-weight:700}
+  .track .who{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+
+  .skel{font-size:12px;color:var(--muted);font-style:italic;background:#fafaf6;border:1px dashed var(--hairline);padding:10px 12px;border-radius:8px;margin-top:6px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .legend .tag{font-size:10px}
+
+  footer{padding:18px 22px 28px;font-size:11.5px;color:var(--muted);text-align:center}
+
+  /* lock screen */
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:9999}
+  .gate-card{background:#fff;border-radius:18px;border:0.5px solid var(--hairline);padding:32px 28px;max-width:380px;width:100%;text-align:center}
+  .gate-card .kicker{justify-content:center}
+  .gate-card h1{font-size:22px;margin:6px 0 8px}
+  .gate-card p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 18px}
+  .gate-form{display:flex;flex-direction:column;gap:10px}
+  .gate-form input{font-size:15px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--hairline);background:#fafaf6;color:var(--ink);font-family:inherit;outline:none}
+  .gate-form input:focus{border-color:var(--accent);background:#fff}
+  .gate-form button{font-size:14px;font-weight:600;padding:11px 14px;border-radius:10px;border:0;background:var(--ink);color:#fff;cursor:pointer;font-family:inherit}
+  .gate-form button:hover{background:#000}
+  .gate-err{font-size:12px;color:#b91c1c;margin-top:6px;min-height:14px}
+
+  /* Montreal map + recs */
+  #mtl-map{height:420px;width:100%;border-radius:10px;background:#e8e4dc;margin-bottom:14px}
+  .leaflet-container{font-family:inherit}
+  .leaflet-popup-content-wrapper{border-radius:12px;padding:0}
+  .leaflet-popup-content{margin:0;font:inherit;width:240px!important}
+  .mp{padding:12px 14px 10px}
+  .mp .pt{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);margin-bottom:2px}
+  .mp .pn{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 5px;line-height:1.3}
+  .mp .pd{font-size:12px;color:var(--ink);line-height:1.45;margin-bottom:8px}
+  .mp .pf{font-size:11px;color:var(--muted);margin-bottom:6px}
+  .mp a.btn{display:block;text-align:center;background:var(--ink);color:#fff;text-decoration:none;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:600}
+  .mtl-cat{margin-top:14px}
+  .mtl-cat h3{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 6px;letter-spacing:.02em}
+  .mtl-item{display:grid;grid-template-columns:26px 1fr auto;gap:10px;padding:9px 0;border-top:1px solid var(--hairline);font-size:13px;align-items:start;cursor:pointer}
+  .mtl-item:first-of-type{border-top:0}
+  .mtl-item:hover{background:#fafaf6}
+  .mtl-emoji{font-size:18px;line-height:1.2;text-align:center}
+  .mtl-name{font-weight:600;line-height:1.3;color:var(--ink)}
+  .mtl-note{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:1px}
+  .mtl-fit{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:999px;white-space:nowrap;align-self:start;margin-top:2px}
+  .fit-all{background:#e7f0e3;color:#3d6230}
+  .fit-kid{background:#e6efff;color:#1d4ed8}
+  .fit-mom{background:#fdf2e3;color:#b45309}
+  .fit-adult{background:#f1ebfb;color:#7c3aed}
+  .mtl-pin{position:relative}
+  .mtl-pindiv{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:14px}
+  .mtl-pindiv .pi{transform:rotate(45deg);line-height:1}
+
+  /* montpelier — reuses .mtl-* styles, plus week cards + grocery + driving */
+  #mtpl-map{height:340px;width:100%;border-radius:10px;background:#e8e4dc;margin-bottom:12px}
+  .week-card{background:#fafaf6;border-radius:10px;padding:12px 14px;margin-bottom:10px;border:0.5px solid var(--hairline)}
+  .week-card .wd{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);font-weight:700;margin-bottom:2px}
+  .week-card .wt{font-size:14px;font-weight:700;margin:0 0 4px;line-height:1.3}
+  .week-card .ws{font-size:12.5px;line-height:1.5;color:var(--ink);margin:0}
+  .gro-grid{display:grid;grid-template-columns:1fr;gap:8px}
+  .gro-card{background:#fafaf6;border-radius:10px;padding:11px 13px;border:0.5px solid var(--hairline)}
+  .gro-card h4{font-size:12px;font-weight:700;color:var(--warn);margin:0 0 6px;letter-spacing:.04em;text-transform:uppercase}
+  .gro-card ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+  .gro-card li{margin-bottom:1px}
+  .driving-list{font-size:13px;line-height:1.55;margin:0;padding-left:18px;color:var(--ink)}
+  .driving-list li{margin-bottom:4px}
+  @media (min-width: 600px){
+    .gro-grid{grid-template-columns:1fr 1fr}
+  }
+
+  /* itineraries */
+  .itin-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .itin-tab{padding:8px 14px;border-radius:999px;border:1.5px solid var(--hairline);background:#fff;color:var(--ink);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.2}
+  .itin-tab .it-date{font-size:10.5px;color:var(--muted);font-weight:600}
+  .itin-tab.active{background:#3d6230;color:#fff;border-color:#3d6230}
+  .itin-tab.active .it-date{color:rgba(255,255,255,.8)}
+  .itin-tab.all{justify-content:center;align-items:center;flex-direction:row}
+  .itin-head{font-size:11px;color:var(--warn);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+  .itin-title{font-size:18px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+  .itin-meta{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:14px}
+  .itin-meta b{color:var(--ink);font-weight:600}
+  .itin-stop{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--hairline);font-size:13px}
+  .itin-stop:first-of-type{border-top:0}
+  .itin-time{font-size:11px;font-weight:700;color:var(--warn);padding-top:3px;letter-spacing:.02em}
+  .itin-stop-body{cursor:pointer}
+  .itin-stop-body:hover .itin-name{color:#3d6230}
+  .itin-name{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
+  .itin-note{font-size:12px;line-height:1.4;color:var(--muted)}
+  .itin-fit{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+  .itin-free{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
+
+  @media (min-width: 760px){
+    main{padding:28px 22px}
+    #mtl-map{height:500px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Password gate -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="kicker">Summer 2026 · private</div>
+    <h1>Family password</h1>
+    <p>This page is for family logistics. Enter the password to unlock.</p>
+    <form class="gate-form" id="gate-form">
+      <input type="password" id="gate-input" placeholder="Password" autocomplete="off" autofocus />
+      <button type="submit">Unlock</button>
+      <div class="gate-err" id="gate-err"></div>
+    </form>
+  </div>
+</div>
+
+<!-- App (hidden until unlocked) -->
+<header id="hdr" style="display:none">
+  <div class="kicker">Summer 2026 · Vermont + Montreal</div>
+  <h1>Where everyone is, when</h1>
+  <div class="sub">Jun 25 – Jul 9 · primary tracker · noplacelike.nyc/summer-2026</div>
+  <div class="pills" id="pills"></div>
+</header>
+<main id="main" style="display:none"></main>
+<footer id="ftr" style="display:none">made with love · annarobby</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ===== Montpelier recommendations =====
+// fit: 'all', 'kid', 'mom' (after Lola arrives), 'adult' (Anna's coffee/breather moments)
+var MTPL_PLACES = {
+  parks: [
+    {name:"Hubbard Park · playground + trails", lat:44.2654, lng:-72.5751, emoji:"🌳", fit:"kid",
+      note:"194-acre park 5 min from Cal/Eli's. Playground, easy trails, observation tower. Free. Default EASY post-camp move."},
+    {name:"State House lawn",                    lat:44.2627, lng:-72.5806, emoji:"🏛️", fit:"all",
+      note:"Big lawn in front of the gold-domed Vermont State House. Inez can run, perfect picnic-dinner spot. Photos."},
+    {name:"Wrightsville Beach (reservoir)",     lat:44.3025, lng:-72.5689, emoji:"🏖️", fit:"kid",
+      note:"Sandy swimming beach on the reservoir. 10 min north on US-2. Open till sunset. Bring swimsuit + towel."},
+    {name:"North Branch Nature Center",         lat:44.2750, lng:-72.5751, emoji:"🐸", fit:"kid",
+      note:"713 Elm St. Free trails, beaver pond, indoor nature room. ~5 min from home base."}
+  ],
+  food: [
+    {name:"Skinny Pancake · Montpelier",        lat:44.2607, lng:-72.5759, emoji:"🥞", fit:"all",
+      note:"Crepes, Vermont-grown ingredients, kid menu, super easy. 89 Main St. Default kid dinner."},
+    {name:"Mad Taco",                            lat:44.2606, lng:-72.5762, emoji:"🌮", fit:"all",
+      note:"Casual tacos + bowls, kid-friendly, fast. 72 Main St."},
+    {name:"Sarducci's · Italian",                lat:44.2602, lng:-72.5810, emoji:"🍝", fit:"all",
+      note:"River-side patio, Italian classics, kid menu. 3 Main St. Good when Lola is here."},
+    {name:"Three Penny Taproom",                lat:44.2605, lng:-72.5780, emoji:"🍺", fit:"all",
+      note:"Beloved VT taproom + kid-OK food. 108 Main St."},
+    {name:"Down Home Kitchen",                   lat:44.2607, lng:-72.5772, emoji:"🍳", fit:"all",
+      note:"Southern comfort food, kid heaven (mac + cheese, biscuits). 100 Main St."},
+    {name:"Birchgrove Baking",                   lat:44.2607, lng:-72.5770, emoji:"🥐", fit:"all",
+      note:"Best morning pastries + bread in town. Quick breakfast/treat. 88 Main St."}
+  ],
+  treats: [
+    {name:"Chill Vermont Gelato",               lat:44.2604, lng:-72.5810, emoji:"🍦", fit:"kid",
+      note:"Small batch Vermont gelato. 24 State St. Pair with Bear Pond Books wander."},
+    {name:"Bear Pond Books",                     lat:44.2607, lng:-72.5762, emoji:"📚", fit:"all",
+      note:"Beloved indie bookstore w/ great kid section. 77 Main St. Browse while Inez picks a book."},
+    {name:"Onion River Outdoors",                lat:44.2603, lng:-72.5790, emoji:"🏕️", fit:"all",
+      note:"Local outdoor gear shop. Browse + kid is fascinated. 20 Langdon St."}
+  ],
+  kidDay: [
+    {name:"Morse Farm Maple Sugarworks",        lat:44.2848, lng:-72.5505, emoji:"🍁", fit:"kid",
+      note:"Maple sugar farm, free samples, farm animals (goats, llamas), short trail. 1168 County Rd. ~10 min from home, all local roads. CLOSES ~5:30 PM weekdays — call before going (802-223-2740)."},
+    {name:"Bragg Farm Sugarhouse",              lat:44.2932, lng:-72.4942, emoji:"🐐", fit:"kid",
+      note:"Maple farm w/ goats + alpacas. Less touristy than Morse. ~15 min via VT-14, all 2-lane country road. Good backup if Morse Farm is closed."}
+  ],
+  grocery: [
+    {name:"Hunger Mountain Co-op",              lat:44.2575, lng:-72.5800, emoji:"🛒", fit:"all",
+      note:"BEST option for Inez's lunches + snacks. Organic, bulk, prepared foods, sandwich counter, healthy kid snacks. 623 Stone Cutters Way. 5 min from home."},
+    {name:"Shaw's Supermarket · Berlin",        lat:44.2017, lng:-72.5891, emoji:"🛒", fit:"all",
+      note:"Big conventional supermarket for bulk basics + cheaper staples. 282 Berlin Mall Rd. ~10 min south."},
+    {name:"Hannaford · Barre",                   lat:44.1968, lng:-72.5025, emoji:"🛒", fit:"all",
+      note:"Backup if Shaw's is out of something. 235 N Main St, Barre. Near Enterprise."}
+  ]
+};
+
+var MTPL_CATEGORIES = [
+  {key:'parks',    label:'Parks + outdoors', emoji:'🌳'},
+  {key:'food',     label:'Easy meals',       emoji:'🍽️'},
+  {key:'treats',   label:'Treats + downtown',emoji:'🍦'},
+  {key:'kidDay',   label:'Mini road-trips',  emoji:'🚗'},
+  {key:'grocery',  label:'Grocery + supplies',emoji:'🛒'}
+];
+
+// Suggested after-camp plan, M-F. Pickup is 4:30 PM. ~3 hr window before kid bedtime.
+var MTPL_WEEK = [
+  {day:"Mon 6/29", title:"Easy day · just got the car", suggestion:"Cal helped you all morning. After camp pickup, head straight to Hubbard Park playground for 30-45 min then home. Dinner: Skinny Pancake takeout or whatever's easy. Don't push it."},
+  {day:"Tue 6/30", title:"First real solo day · grocery + beach", suggestion:"<b>Grocery run morning of camp drop:</b> Hunger Mountain Co-op for the week's lunches + breakfast + 2 dinners. After camp: swimsuits, drive to Wrightsville Beach (10 min, all uphill on US-2), splash 1 hr, home for an easy dinner."},
+  {day:"Wed 7/1", title:"Cal leaves today · downtown stroll", suggestion:"After camp: Bear Pond Books → Chill Vermont Gelato → State House lawn run-around. All within 3 blocks downtown. Easy dinner home."},
+  {day:"Thu 7/2", title:"Lola arrives mid-day · State House picnic", suggestion:"You pick Lola up from Amtrak earlier in the day. After camp: bring Lola, pick up Birchgrove or Skinny Pancake to-go, picnic on the State House lawn. Mom + Inez bond moment."},
+  {day:"Fri 7/3", title:"Camp Montpelier parade + Morse Farm", suggestion:"Camp does the Montpelier Independence Day Parade. After: bring Lola + Inez to Morse Farm Maple Sugarworks (closes 5:30 — go right after camp), maple creemees + see the goats. Dinner: Sarducci's patio."},
+  {day:"Sat 7/4", title:"Camp Cabot Parade · longer day", suggestion:"Cabot Parade in Cabot (~30 min drive northeast). Whole day with camp. Easy night at home or downtown."}
+];
+
+var MTPL_GROCERY_LIST = {
+  inezLunches: [
+    "Sandwich bread (or wraps)", "PB + J or Sunbutter (if camp is nut-free, check)",
+    "Sliced turkey + cheese", "Cucumbers / carrot sticks",
+    "Apples + grapes + clementines", "Cheese sticks", "Yogurt tubes / pouches",
+    "Granola bars + crackers", "Juice boxes or kids' water bottle"
+  ],
+  breakfast: ["Cereal Inez likes", "Milk", "Eggs", "Bagels (from Birchgrove if she wants real ones)", "Fruit"],
+  dinners: ["Pasta + jar sauce (1 night)", "Chicken nuggets + frozen veg (1 night)", "Sandwich stuff doubles as dinner-on-the-go"],
+  household: ["Snacks for Anna", "Coffee + filters (or grab on Main St)", "Sunscreen + bug spray"]
+};
+
+var MTPL_DRIVING = [
+  "<b>You don't need to drive any real highway.</b> No I-89, no merging into multi-lane traffic. Everything in this week's plan stays on Vermont state roads + local streets.",
+  "Vermont \"state highways\" (US-2, US-302, VT-12, VT-14) are just 2-lane country roads with a stoplight every few miles, 35–50 mph. They sound like highways but feel like quiet roads through farmland.",
+  "<b>Camp ↔ home:</b> 100% local roads (Towne Hill → VT-14). ~15 min, no highway at all.",
+  "<b>Enterprise pickup ↔ home:</b> Down US-302 to Barre. 2-lane country road, ~10 min, totally chill. Cal goes with you Day 1.",
+  "<b>Wrightsville Beach ↔ home:</b> Local streets + a short VT-12 stretch. Country drive, slow.",
+  "<b>Grocery (Hunger Mtn Co-op):</b> 5 min downtown — all local streets. <b>Shaw's</b> backup is 10 min south on US-302 (still no real highway).",
+  "<b>Always set Google Maps to \"avoid highways.\"</b> Settings → Driving → Route Options → toggle Avoid Highways. Once set, every route in this week stays on slow, low-stress roads.",
+  "Vermont drivers are slow + polite. Watch for deer at dusk on country roads.",
+  "Parking is free + easy everywhere. Pull in, get out, you're fine.",
+  "Gas is a little pricier than NYC — fill up at Mobil/Shell on US-302 in Berlin once during the week."
+];
+
+// ===== Montreal recommendations (plaintext — no PII) =====
+// fit: 'all' = whole family, 'kid' = especially Inez, 'mom' = especially Lola, 'adult' = Anna+Robby only
+var MTL_PLACES = {
+  eats: [
+    {name:"St-Viateur Bagel",       lat:45.5237, lng:-73.6035, emoji:"🥯", fit:"all",   note:"Iconic 24/7 wood-fired Montreal bagels. Get sesame, eat warm. 263 St-Viateur O. THE morning move."},
+    {name:"Fairmount Bagel",        lat:45.5232, lng:-73.5985, emoji:"🥯", fit:"all",   note:"St-Viateur's eternal rival. Try both, debate. 74 Fairmount O."},
+    {name:"Schwartz's Deli",        lat:45.5165, lng:-73.5806, emoji:"🥪", fit:"all",   note:"Smoked-meat institution since 1928. Counter or table, line moves. 3895 St-Laurent."},
+    {name:"La Banquise · poutine",  lat:45.5279, lng:-73.5701, emoji:"🍟", fit:"all",   note:"30+ poutine varieties, open 24h. Inez heaven. 994 Rachel E."},
+    {name:"Pichai · Thai street",   lat:45.5223, lng:-73.5963, emoji:"🍜", fit:"all",   note:"Modern Thai, casual, kid-friendly. 5169 St-Laurent (your TikTok pick)."},
+    {name:"Olive et Gourmando",     lat:45.5040, lng:-73.5575, emoji:"🥖", fit:"all",   note:"Old Mtl sandwich + bakery, lunch perfect. Closes 5 PM. 351 St-Paul O."},
+    {name:"Keung Kee · Cantonese",  lat:45.5078, lng:-73.5605, emoji:"🥟", fit:"all",   note:"Chinatown classic. 70 Rue de la Gauchetière O. From your TikTok."},
+    {name:"Tim Hortons",            lat:45.5081, lng:-73.5536, emoji:"☕", fit:"all",   note:"The Canadian moment. Donuts + Double-Double. Many locations."}
+  ],
+  bakeries: [
+    {name:"Paris-Montréal Le Département", lat:45.5365, lng:-73.6145, emoji:"🥐", fit:"all", note:"Saucisson rolls + viennoiserie. The TikTok bakery. Near Jean-Talon Market."},
+    {name:"Au Kouign Amann",       lat:45.5236, lng:-73.5821, emoji:"🥐", fit:"all",   note:"Best kouign amann + croissants in the city. Tiny line. 322 Mont-Royal E."},
+    {name:"Hof Kelsten",            lat:45.5207, lng:-73.5786, emoji:"🍞", fit:"all",   note:"Jewish bakery — challah, rye, babka. 4524 St-Laurent."},
+    {name:"Crémy Pâtisserie",       lat:45.5375, lng:-73.6098, emoji:"🧁", fit:"all",   note:"Cronut-style pastries in Mile-Ex. 6210 Hutchison."}
+  ],
+  treats: [
+    {name:"Mr. Puffs · mini donuts", lat:45.5083, lng:-73.5522, emoji:"🍩", fit:"kid",  note:"Hot mini donuts with toppings in Old Mtl. Inez hit. 124 St-Paul E."},
+    {name:"Roméo Gelato",           lat:45.5295, lng:-73.5870, emoji:"🍦", fit:"all",   note:"Best gelato in the Plateau. 285 Av. du Mont-Royal E."},
+    {name:"Cathcart food hall",     lat:45.5012, lng:-73.5697, emoji:"🍽️", fit:"all",   note:"Modern food hall under Place Ville Marie. Many vendors, mom can sit. Indoors."}
+  ],
+  sights: [
+    {name:"Notre-Dame Basilica",    lat:45.5045, lng:-73.5564, emoji:"⛪", fit:"all",   note:"Stunning interior. ~$15. AURA light show at night is jaw-dropping (Inez + Lola will love)."},
+    {name:"Place Jacques-Cartier",  lat:45.5081, lng:-73.5536, emoji:"🎭", fit:"all",   note:"Cobblestone square w/ street performers, magicians, music. Free, vibey."},
+    {name:"Old Port · Vieux-Port",  lat:45.5050, lng:-73.5500, emoji:"⛴️", fit:"all",   note:"La Grande Roue Ferris wheel (Inez!), waterfront walk, zipline option."},
+    {name:"Mount Royal Belvédère",  lat:45.5040, lng:-73.5870, emoji:"🏞️", fit:"all",   note:"Short hike or drive up to Kondiaronk lookout. Panoramic view, picnic-able."},
+    {name:"Habitat 67",             lat:45.5025, lng:-73.5403, emoji:"🏗️", fit:"adult", note:"Iconic '67 architecture. Photo stop. ~10 min drive from Old Port."}
+  ],
+  markets: [
+    {name:"Marché Jean-Talon",      lat:45.5366, lng:-73.6147, emoji:"🍑", fit:"all",   note:"Best food market in the city. Samples, produce, cheese, cider. Mom-loved."},
+    {name:"Marché Atwater",         lat:45.4789, lng:-73.5779, emoji:"🧀", fit:"all",   note:"Smaller, easier market on the Lachine Canal. Picnic supplies + bike."}
+  ],
+  kidMagnets: [
+    {name:"Biodôme",                lat:45.5604, lng:-73.5494, emoji:"🦎", fit:"kid",  note:"5 indoor ecosystems w/ live animals. Rainforest → Arctic. Inez magnet. Lola comfy too."},
+    {name:"Insectarium",            lat:45.5575, lng:-73.5556, emoji:"🦋", fit:"kid",  note:"Just renovated. Wild new architecture. Right next to Botanical Garden."},
+    {name:"Jardin Botanique",       lat:45.5566, lng:-73.5612, emoji:"🌿", fit:"all",   note:"Huge, gorgeous, easy walking. Japanese + Chinese gardens. Mom + Inez gold."},
+    {name:"Montreal Science Centre", lat:45.5034, lng:-73.5473, emoji:"🔬", fit:"kid",  note:"Interactive science museum at Old Port. Rainy-day backup."},
+    {name:"La Ronde (Six Flags)",   lat:45.5217, lng:-73.5347, emoji:"🎢", fit:"kid",  note:"Amusement park on île Sainte-Hélène. Full day. Pricey but Inez will not forget."}
+  ],
+  adult: [
+    {name:"Bota Bota · spa boat",   lat:45.5008, lng:-73.5482, emoji:"♨️", fit:"adult", note:"16+ ONLY (Inez can't go). Anna + Robby date afternoon while Lola has Inez. Book ahead."},
+    {name:"Joe Beef",               lat:45.4798, lng:-73.5854, emoji:"🍷", fit:"adult", note:"Iconic Little Burgundy bistro. Adults-only night. Rez weeks ahead."},
+    {name:"Mile End wander",        lat:45.5210, lng:-73.6010, emoji:"🛍️", fit:"adult", note:"St-Laurent + St-Viateur + Bernard. Indie shops, cafes, vintage. Anna-coded."}
+  ]
+};
+
+// Realistic itineraries — kid- and mom-paced. 3-4 anchor stops per day.
+// Stops can reference MTL_PLACES entries by `placeName` (will get a pin link) or be free-form.
+var MTL_ITINERARIES = [
+  {
+    id:"day1", date:"Mon 7/6", title:"Old Montreal · slow start",
+    neighborhood:"Old Montreal (Vieux-Montréal)",
+    pace:"All walkable inside Old Mtl. ~6-7 hrs out, with a mid-afternoon Inez/Lola rest if needed.",
+    stops:[
+      {time:"~10:30 AM", placeName:"Olive et Gourmando", note:"Late breakfast / early lunch — sandwiches + pastries. Lines out the door, worth it."},
+      {time:"~12:00 PM", placeName:"Notre-Dame Basilica", note:"~$15 entry, 30-45 min inside. Stunning blue ceiling, Inez awe moment."},
+      {time:"~1:00 PM", placeName:"Place Jacques-Cartier", note:"Street performers, magicians, music. Bench-sit while Inez watches."},
+      {time:"~2:00 PM", placeName:"Mr. Puffs · mini donuts", note:"Hot mini donuts treat (Inez heaven). Walk it down toward the water."},
+      {time:"~2:30 PM", placeName:"Old Port · Vieux-Port", note:"La Grande Roue Ferris wheel ride (~$30). Waterfront walk after."},
+      {time:"~4:30 PM", name:"Back to lodging · rest", note:"Mom + Inez nap window. Anna + Robby can stay out or join."},
+      {time:"Evening", name:"Easy dinner near lodging", note:"Don't push it — recovery day. Pick something close."}
+    ]
+  },
+  {
+    id:"day2", date:"Tue 7/7", title:"Biodôme + Botanical Garden",
+    neighborhood:"Olympic Park (east side)",
+    pace:"One big destination cluster — Biodôme + Botanical + Insectarium are all next to each other. Uber/drive there, ~15 min from downtown. The big Inez day.",
+    stops:[
+      {time:"~9:00 AM", placeName:"St-Viateur Bagel", note:"Drive-by breakfast — pick up a dozen warm, eat in the car en route. Inez sees the wood-fired oven."},
+      {time:"~10:30 AM", placeName:"Biodôme", note:"5 indoor ecosystems with live animals (tropical → polar). ~2 hrs. Mom is comfy indoors."},
+      {time:"~12:30 PM", name:"Lunch near Olympic Plaza", note:"Food trucks at Olympic Plaza in summer, or grab something simple. Picnic on the grass."},
+      {time:"~1:30 PM", placeName:"Jardin Botanique", note:"Huge gardens — Japanese + Chinese + alpine. Strollable for Lola. ~2 hrs at family pace."},
+      {time:"~3:30 PM", placeName:"Insectarium", note:"Just renovated 2022 — wild new architecture. Right next to Botanical. ~45 min if Inez is into it."},
+      {time:"~5:00 PM", name:"Back to lodging · rest", note:"Lots of walking today — everyone needs a break."},
+      {time:"~7:00 PM", placeName:"La Banquise · poutine", note:"Casual, kid heaven, open late. Easy after a big day. Or order delivery if mom is wiped."}
+    ]
+  },
+  {
+    id:"day3", date:"Wed 7/8", title:"Market + Mount Royal picnic",
+    neighborhood:"Little Italy → Mount Royal → Plateau",
+    pace:"Slow + foodie. Drive/Uber between neighborhoods. Anna + Robby can sneak Bota Bota in the afternoon while Lola has Inez at the lodging.",
+    stops:[
+      {time:"~9:30 AM", placeName:"Au Kouign Amann", note:"Croissants + kouign amann for breakfast. Sit-down OK. Pick up extra pastries for the picnic."},
+      {time:"~10:30 AM", placeName:"Marché Jean-Talon", note:"Best food market in the city. Samples, cheese, cider. Mom + Anna heaven. Grab picnic supplies — baguette, cheese, fruit, cured meat."},
+      {time:"~12:30 PM", placeName:"Mount Royal Belvédère", note:"Drive/Uber up to Kondiaronk lookout. Picnic on the bench wall, panoramic city view. Easy short walk for Lola."},
+      {time:"~2:30 PM", name:"Back to lodging — Lola + Inez stay", note:"Optional: Anna + Robby slip out for Bota Bota spa (book ahead — 16+ only). Lola has Inez for ~3 hrs (movie + crafts)."},
+      {time:"~3:00 PM", placeName:"Bota Bota · spa boat", note:"Anna + Robby date afternoon. 2-3 hrs of thermal pools + saunas on the river. Adult-only sanctuary."},
+      {time:"~7:00 PM", placeName:"Pichai · Thai street", note:"Reunite for family dinner. Modern Thai, kid-friendly, on St-Laurent. The TikTok pick."},
+      {time:"~9:00 PM", placeName:"Roméo Gelato", note:"Walk it off in the Plateau, gelato finish for everyone. Or skip if tired."}
+    ]
+  }
+];
+
+var MTL_CATEGORIES = [
+  {key:'eats',       label:'Eat',        emoji:'🍽️'},
+  {key:'bakeries',   label:'Bakeries',   emoji:'🥖'},
+  {key:'treats',     label:'Treats',     emoji:'🍨'},
+  {key:'sights',     label:'Sights',     emoji:'🏛️'},
+  {key:'markets',    label:'Markets',    emoji:'🍑'},
+  {key:'kidMagnets', label:'Kid magnets',emoji:'🎡'},
+  {key:'adult',      label:'Adult-only', emoji:'🍷'}
+];
+
+// ===== Encrypted data blob =====
+var SALT_B64 = "gXBMw+k0kf13ID+sR/jmqw==";
+var IV_B64   = "zHZFC1MhEEeHnnsZ";
+var CT_B64   = "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";
+
+var SESSION_KEY = "summer2026_pw";
+var TRIP, WHEREIS, DAYS, PLACES;
+
+function b64decode(s){
+  return Uint8Array.from(atob(s), function(c){ return c.charCodeAt(0); });
+}
+
+async function deriveKey(password, salt){
+  var enc = new TextEncoder();
+  var keyMaterial = await crypto.subtle.importKey(
+    "raw", enc.encode(password), {name:"PBKDF2"}, false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2", salt:salt, iterations:100000, hash:"SHA-256"},
+    keyMaterial,
+    {name:"AES-GCM", length:256},
+    false,
+    ["decrypt"]
+  );
+}
+
+async function tryUnlock(password){
+  var salt = b64decode(SALT_B64);
+  var iv   = b64decode(IV_B64);
+  var ct   = b64decode(CT_B64);
+  try{
+    var key = await deriveKey(password, salt);
+    var ptBuf = await crypto.subtle.decrypt({name:"AES-GCM", iv:iv}, key, ct);
+    var json = new TextDecoder().decode(ptBuf);
+    var data = JSON.parse(json);
+    TRIP = data.TRIP;
+    WHEREIS = data.WHEREIS;
+    DAYS = data.DAYS;
+    PLACES = data.PLACES;
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function showApp(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('hdr').style.display='';
+  document.getElementById('main').style.display='';
+  document.getElementById('ftr').style.display='';
+  buildPills();
+  render();
+}
+
+document.getElementById('gate-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var pw = document.getElementById('gate-input').value;
+  var err = document.getElementById('gate-err');
+  err.textContent = '';
+  var ok = await tryUnlock(pw);
+  if (ok){
+    try { sessionStorage.setItem(SESSION_KEY, pw); } catch(_){}
+    showApp();
+  } else {
+    err.textContent = "Wrong password — try again.";
+    document.getElementById('gate-input').value = '';
+    document.getElementById('gate-input').focus();
+  }
+});
+
+// Auto-unlock from session
+(async function(){
+  try {
+    var cached = sessionStorage.getItem(SESSION_KEY);
+    if (cached){
+      var ok = await tryUnlock(cached);
+      if (ok) { showApp(); return; }
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  } catch(_){}
+})();
+
+// ===== Render code (runs after unlock) =====
+function fmt(dateStr){
+  var parts = dateStr.split('-');
+  var d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+  var dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {dow:dows[d.getDay()], mon:mons[d.getMonth()], day:d.getDate(),
+          full: dows[d.getDay()] + ' ' + mons[d.getMonth()] + ' ' + d.getDate()};
+}
+
+function dateRange(start, end){
+  var out = [];
+  var s = start.split('-'); var e = end.split('-');
+  var d = new Date(Number(s[0]), Number(s[1])-1, Number(s[2]));
+  var done = new Date(Number(e[0]), Number(e[1])-1, Number(e[2]));
+  while(d <= done){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    out.push(y+'-'+m+'-'+dd);
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+var DATES, TODAY_KEY = (function(){
+  var t = new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+})();
+
+var active = 'overview';
+
+function buildPills(){
+  DATES = dateRange(TRIP.startDate, TRIP.endDate);
+  var w = document.getElementById('pills');
+  w.innerHTML = '';
+  var pages = [
+    {id:'overview', label:'Overview'},
+    {id:'places', label:'Places'},
+    {id:'montpelier', label:'🌲 Montpelier'},
+    {id:'montreal', label:'🍁 Montreal'}
+  ];
+  pages.forEach(function(p){
+    var b = document.createElement('button');
+    b.className = 'pill' + (active===p.id?' active':'');
+    b.textContent = p.label;
+    b.onclick = function(){ active = p.id; buildPills(); render(); };
+    w.appendChild(b);
+  });
+  DATES.forEach(function(d){
+    var f = fmt(d);
+    var b = document.createElement('button');
+    b.className = 'pill' + (active===d?' active':'');
+    b.innerHTML = f.dow + ' <span class="ds">'+ f.mon + ' ' + f.day +'</span>';
+    b.onclick = function(){ active = d; buildPills(); render(); };
+    w.appendChild(b);
+  });
+}
+
+function locTag(code, sub){
+  var labels = { nyc:'NYC', vt:'VT', me:'ME', mtl:'MTL', transit:'transit' };
+  return '<span class="tag tag-'+code+'">'+labels[code]+(sub?' · '+sub:'')+'</span>';
+}
+
+function renderOverview(){
+  var m = document.getElementById('main');
+  var headRow = '<tr><th></th>';
+  DATES.forEach(function(d){
+    var f = fmt(d);
+    headRow += '<th class="'+(d===TODAY_KEY?'today':'')+'">'+f.dow+'<span class="dnum">'+f.day+'</span></th>';
+  });
+  headRow += '</tr>';
+
+  var bodyRows = '';
+  TRIP.people.forEach(function(p){
+    bodyRows += '<tr><th>'+p.name+'</th>';
+    DATES.forEach(function(d){
+      var w = (WHEREIS[d] && WHEREIS[d][p.id]) || {loc:''};
+      var locLabels = { nyc:'NYC', vt:'Mtpl', me:'ME', mtl:'MTL', transit:'→' };
+      var lbl = locLabels[w.loc] || '—';
+      bodyRows += '<td class="c '+w.loc+' '+(d===TODAY_KEY?'today':'')+'">'+lbl+(w.sub?'<span class="sub">'+w.sub+'</span>':'')+'</td>';
+    });
+    bodyRows += '</tr>';
+  });
+
+  m.innerHTML = ''
+    + '<div class="panel">'
+      + '<div class="sect">Trip at a glance</div>'
+      + '<div class="meta">'
+        + '<div class="k">Window</div><div class="v">Thu Jun 25 – Thu Jul 9, 2026 · 15 days</div>'
+        + '<div class="k">People</div><div class="v">Anna, Inez (Nezzy), Robby, Lola (mom)</div>'
+        + '<div class="k">Anchors</div><div class="v">Inez camp Mon-Fri 6/29–7/3 · Mtpl parade 7/3 · Cabot parade 7/4 · Montreal 7/5–7/9</div>'
+        + '<div class="k">Home base VT</div><div class="v"><b>385 Towne Hill Rd, Montpelier</b> · Cal (they/them) + Eli (she/her)</div>'
+        + '<div class="k">Rental</div><div class="v">Hyundai Kona · Enterprise Barre · 6/29 9:30 AM → return early Sun 7/5</div>'
+        + '<div class="k">Car to MTL</div><div class="v">Robby\'s car · all 4 of us from Mtpl onwards</div>'
+      + '</div>'
+      + '<div class="legend">'
+        + locTag('nyc') + locTag('vt','Vermont') + locTag('me','Maine') + locTag('mtl','Montreal') + locTag('transit')
+      + '</div>'
+    + '</div>'
+
+    + '<div class="panel">'
+      + '<div class="sect">Who\'s where, when</div>'
+      + '<div class="ww-wrap"><table class="ww"><thead>'+headRow+'</thead><tbody>'+bodyRows+'</tbody></table></div>'
+    + '</div>'
+
+    + '<div class="panel">'
+      + '<div class="sect">Per-person tracks</div>'
+      + '<div class="tracks">'
+        + '<div class="track"><div class="who">Anna</div><h3>NYC → VT → MTL → NYC</h3>NYC through 6/27. Train to Mtpl Sun 6/28. Mtpl through Sun 7/5 AM, then MTL with Robby + family. Home Thu 7/9.</div>'
+        + '<div class="track"><div class="who">Inez</div><h3>NYC → camp → MTL → NYC</h3>Travels w/ Anna. Camp Mon 6/29 – Fri 7/3, parade 7/4. MTL with the family 7/5–7/9.</div>'
+        + '<div class="track"><div class="who">Robby</div><h3>NYC → Maine → VT → MTL → NYC</h3>Leaves NYC Thu 6/25 ~9 AM for Maine. Drives to Mtpl Sun 7/5, arrives ~5 PM, picks everyone up, on to MTL same night. Home 7/9.</div>'
+        + '<div class="track"><div class="who">Lola</div><h3>NYC → VT → MTL → NYC</h3>Stays NYC through 7/1. Amtrak to Mtpl Thu 7/2 (ticket TBD). Hotel night 7/2, Cal/Eli\'s 7/3 + 7/4. MTL with family 7/5–7/9.</div>'
+      + '</div>'
+    + '</div>'
+
+    + '<div class="panel">'
+      + '<div class="sect">Things still to lock in</div>'
+      + '<p>'
+        + '• <b>Lola\'s Amtrak ticket</b> for Thu 7/2 (NYC → Mtpl-Berlin)<br>'
+        + '• <b>Lola\'s Montpelier hotel</b> for night of Thu 7/2<br>'
+        + '• <b>Montreal lodging</b> for 7/5–7/9 (3 nights, 4 ppl)<br>'
+        + '• <b>Enterprise early return</b> on Sun 7/5 — coordinate with Robby\'s arrival time<br>'
+        + '• <b>Passports / IDs</b> for the border crossing both ways'
+      + '</p>'
+    + '</div>'
+  ;
+}
+
+function renderPlaces(){
+  var m = document.getElementById('main');
+  var html = '';
+
+  html += '<div class="panel"><div class="sect">Hosts &amp; lodging</div>';
+  PLACES.hosts.forEach(function(h){
+    html += '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:14px;margin-bottom:2px">'+h.name+'</div>'
+      + '<div class="meta"><div class="k">Address</div><div class="v">'+h.addr+'</div>'
+      + '<div class="k">People</div><div class="v">'+h.people+'</div>'
+      + '<div class="k">Notes</div><div class="v">'+h.notes+'</div></div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="panel"><div class="sect">Events / camp</div>';
+  PLACES.events.forEach(function(e){
+    html += '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:14px;margin-bottom:2px">'+e.name+'</div>'
+      + '<div class="meta">'
+      + '<div class="k">Address</div><div class="v">'+e.addr+'</div>'
+      + '<div class="k">When</div><div class="v">'+e.time+'</div>'
+      + '<div class="k">Contacts</div><div class="v">'+e.contacts+'</div>'
+      + (e.url?'<div class="k">URL</div><div class="v"><a href="'+e.url+'" target="_blank" rel="noopener" style="color:var(--warn)">'+e.url+'</a></div>':'')
+      + '<div class="k">Notes</div><div class="v">'+e.notes+'</div>'
+      + '</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="panel"><div class="sect">Transit &amp; rental</div>';
+  PLACES.transit.forEach(function(t){
+    html += '<div style="margin-bottom:14px"><div style="font-weight:700;font-size:14px;margin-bottom:2px">'+t.name+'</div>'
+      + '<div class="meta">'
+      + (t.addr?'<div class="k">Address</div><div class="v">'+t.addr+'</div>':'')
+      + (t.time?'<div class="k">When</div><div class="v">'+t.time+'</div>':'')
+      + (t.contacts?'<div class="k">Details</div><div class="v">'+t.contacts+'</div>':'')
+      + (t.notes?'<div class="k">Notes</div><div class="v">'+t.notes+'</div>':'')
+      + '</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="panel"><div class="sect">Contacts</div><div class="meta">';
+  PLACES.contacts.forEach(function(c){
+    html += '<div class="k">'+c.who+'</div><div class="v">'+c.phone+'</div>';
+  });
+  html += '</div></div>';
+
+  m.innerHTML = html;
+}
+
+function renderDay(dateKey){
+  var m = document.getElementById('main');
+  var f = fmt(dateKey);
+  var d = DAYS[dateKey] || { title:'', summary:'', keyEvents:[], notes:'' };
+  var wMap = WHEREIS[dateKey] || {};
+
+  var locLabels = { nyc:'NYC', vt:'Vermont', me:'Maine', mtl:'Montreal', transit:'in transit' };
+  var whereRows = '';
+  TRIP.people.forEach(function(p){
+    var w = wMap[p.id] || {loc:''};
+    whereRows += '<div class="k">'+p.name+'</div><div class="v">'+locTag(w.loc, w.sub||'')+'</div>';
+  });
+
+  var eventsHtml = '';
+  if (d.keyEvents && d.keyEvents.length){
+    eventsHtml = '<ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.6">'
+      + d.keyEvents.map(function(e){ return '<li>'+e+'</li>'; }).join('')
+      + '</ul>';
+  } else {
+    eventsHtml = '<div class="skel">No fixed events for today yet.</div>';
+  }
+
+  var todayBadge = (dateKey===TODAY_KEY)
+    ? '<span class="tag" style="background:var(--warn);color:#fff;margin-left:6px">TODAY</span>' : '';
+
+  m.innerHTML = ''
+    + '<div class="panel">'
+      + '<div class="kicker" style="margin-bottom:4px">'+f.full+', 2026'+todayBadge+'</div>'
+      + '<h2 style="font-size:22px;margin:0 0 4px">'+(d.title||'—')+'</h2>'
+      + (d.summary ? '<p style="color:var(--muted);margin:0 0 14px">'+d.summary+'</p>' : '')
+
+      + '<div class="sect">Who\'s where today</div>'
+      + '<div class="meta">'+whereRows+'</div>'
+
+      + '<div class="sect">Key events / fixed times</div>'
+      + eventsHtml
+
+      + '<div class="sect">Restaurants / activities (fill in later)</div>'
+      + '<div class="skel">empty for now — add as you go</div>'
+
+      + (d.notes ? ('<div class="sect">Notes</div><p>'+d.notes+'</p>') : '')
+    + '</div>'
+  ;
+}
+
+function pinIcon(emoji, fit){
+  var bg = fit==='kid'?'#1d4ed8' : fit==='mom'?'#b45309' : fit==='adult'?'#7c3aed' : '#3d6230';
+  return L.divIcon({
+    className:'mtl-pin',
+    html:'<div class="mtl-pindiv" style="background:'+bg+'"><span class="pi">'+emoji+'</span></div>',
+    iconSize:[28,36], iconAnchor:[14,34], popupAnchor:[0,-30]
+  });
+}
+
+function mtlPopupHtml(p){
+  var fitLabel = {all:'All 4 of us', kid:'Kid magnet', mom:'Mom-loved', adult:'Adults only'}[p.fit];
+  var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng;
+  return '<div class="mp"><div class="pt">'+fitLabel+'</div>'
+       + '<h3 class="pn">'+p.emoji+' '+p.name+'</h3>'
+       + '<p class="pd">'+p.note+'</p>'
+       + '<a class="btn" href="'+mapsUrl+'" target="_blank" rel="noopener">Open in Maps</a></div>';
+}
+
+var mtlMap = null;
+var mtlMarkers = {};
+var mtlMode = 'day1'; // 'day1' | 'day2' | 'day3' | 'all'
+
+function findPlace(name){
+  var found = null;
+  Object.keys(MTL_PLACES).forEach(function(k){
+    MTL_PLACES[k].forEach(function(p){ if (p.name === name) found = p; });
+  });
+  return found;
+}
+
+function flyToPlace(name){
+  var marker = mtlMarkers[name];
+  if (!marker || !mtlMap) return;
+  var ll = marker.getLatLng();
+  mtlMap.flyTo(ll, 15, {duration:.6});
+  setTimeout(function(){ marker.openPopup(); }, 600);
+  document.getElementById('mtl-map').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderItineraryBody(itin){
+  var fitLabels = {all:'All 4', kid:'Kid', mom:'Mom', adult:'Adults'};
+  var fitClass = function(f){ return 'fit-'+f; };
+  var html = ''
+    + '<div class="itin-head">'+itin.date+' · '+itin.neighborhood+'</div>'
+    + '<h3 class="itin-title">'+itin.title+'</h3>'
+    + '<p class="itin-meta">'+itin.pace+'</p>';
+  itin.stops.forEach(function(stop){
+    var place = stop.placeName ? findPlace(stop.placeName) : null;
+    html += '<div class="itin-stop"><div class="itin-time">'+stop.time+'</div><div class="itin-stop-body" '
+         + (place ? ('data-name="'+place.name.replace(/"/g,'&quot;')+'"') : '')
+         + ' style="cursor:'+(place?'pointer':'default')+'">';
+    if (place){
+      html += '<div class="itin-name">'+place.emoji+' '+place.name
+            + '<span class="itin-fit '+fitClass(place.fit)+'">'+fitLabels[place.fit]+'</span></div>';
+    } else {
+      html += '<div class="itin-free">'+(stop.name||'')+'</div>';
+    }
+    html += '<div class="itin-note">'+(stop.note||'')+'</div>'
+         + '</div></div>';
+  });
+  return html;
+}
+
+function refitMap(){
+  if (!mtlMap) return;
+  var bounds = [];
+  if (mtlMode === 'all'){
+    Object.keys(MTL_PLACES).forEach(function(k){
+      MTL_PLACES[k].forEach(function(p){ bounds.push([p.lat, p.lng]); });
+    });
+  } else {
+    var itin = MTL_ITINERARIES.find(function(i){ return i.id === mtlMode; });
+    if (itin){
+      itin.stops.forEach(function(s){
+        if (!s.placeName) return;
+        var p = findPlace(s.placeName);
+        if (p) bounds.push([p.lat, p.lng]);
+      });
+    }
+  }
+  if (bounds.length){ mtlMap.fitBounds(bounds, {padding:[40,40], maxZoom:15}); }
+}
+
+function refreshItinPanel(){
+  var panel = document.getElementById('itin-body');
+  if (!panel) return;
+  if (mtlMode === 'all'){
+    panel.innerHTML = ''
+      + '<div class="itin-head">All Montreal places</div>'
+      + '<h3 class="itin-title">À la carte browse</h3>'
+      + '<p class="itin-meta">All ~30 pins on the map above, organized by category below. Use this when you want to pick something on the fly.</p>'
+      + buildCategoryListHtml();
+  } else {
+    var itin = MTL_ITINERARIES.find(function(i){ return i.id === mtlMode; });
+    panel.innerHTML = renderItineraryBody(itin);
+  }
+  // Wire up click flying
+  panel.querySelectorAll('.itin-stop-body[data-name]').forEach(function(el){
+    el.addEventListener('click', function(){ flyToPlace(el.dataset.name); });
+  });
+  panel.querySelectorAll('.mtl-item').forEach(function(row){
+    row.addEventListener('click', function(){ flyToPlace(row.dataset.name); });
+  });
+  refitMap();
+}
+
+function buildCategoryListHtml(){
+  var html = '';
+  MTL_CATEGORIES.forEach(function(cat){
+    var items = MTL_PLACES[cat.key] || [];
+    if (!items.length) return;
+    html += '<div class="mtl-cat"><h3>'+cat.emoji+' '+cat.label+'</h3>';
+    items.forEach(function(p){
+      var fitLabel = {all:'All 4', kid:'Kid', mom:'Mom', adult:'Adults'}[p.fit];
+      html += '<div class="mtl-item" data-name="'+p.name.replace(/"/g,'&quot;')+'">'
+            + '<div class="mtl-emoji">'+p.emoji+'</div>'
+            + '<div><div class="mtl-name">'+p.name+'</div><div class="mtl-note">'+p.note+'</div></div>'
+            + '<span class="mtl-fit fit-'+p.fit+'">'+fitLabel+'</span>'
+            + '</div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+function renderMontreal(){
+  var m = document.getElementById('main');
+  // Tab buttons for itineraries
+  var tabsHtml = '<div class="itin-tabs">';
+  MTL_ITINERARIES.forEach(function(itin){
+    tabsHtml += '<button class="itin-tab'+(mtlMode===itin.id?' active':'')+'" data-mode="'+itin.id+'">'
+              + '<span class="it-date">'+itin.date+'</span><span>'+itin.title+'</span></button>';
+  });
+  tabsHtml += '<button class="itin-tab all'+(mtlMode==='all'?' active':'')+'" data-mode="all">All places</button>';
+  tabsHtml += '</div>';
+
+  var html = ''
+    + '<div class="panel">'
+      + '<div class="sect">Montreal · curated for all 4</div>'
+      + '<p style="margin-bottom:10px">3 mostly-walkable days, paced for Inez + Lola — one neighborhood per day, plus a small adult-only window on Day 3. Color codes: '
+        + '<span class="mtl-fit fit-all">all 4</span> '
+        + '<span class="mtl-fit fit-kid">Inez</span> '
+        + '<span class="mtl-fit fit-mom">Lola</span> '
+        + '<span class="mtl-fit fit-adult">adults only</span>'
+      + '</p>'
+      + tabsHtml
+      + '<div id="mtl-map"></div>'
+      + '<p style="font-size:12px;color:var(--muted);margin:0">Tap any pin or list row to focus the map.</p>'
+    + '</div>'
+    + '<div class="panel" id="itin-panel"><div id="itin-body"></div></div>';
+
+  m.innerHTML = html;
+
+  // Tab click handlers
+  document.querySelectorAll('.itin-tab').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      mtlMode = tab.dataset.mode;
+      document.querySelectorAll('.itin-tab').forEach(function(t){ t.classList.toggle('active', t===tab); });
+      refreshItinPanel();
+    });
+  });
+
+  // Init map after DOM
+  setTimeout(function(){
+    if (mtlMap) { mtlMap.remove(); mtlMap = null; mtlMarkers = {}; }
+    mtlMap = L.map('mtl-map', {zoomControl:true, attributionControl:false}).setView([45.515, -73.575], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom:19}).addTo(mtlMap);
+
+    Object.keys(MTL_PLACES).forEach(function(catKey){
+      MTL_PLACES[catKey].forEach(function(p){
+        var icon = pinIcon(p.emoji, p.fit);
+        var marker = L.marker([p.lat, p.lng], {icon:icon}).addTo(mtlMap);
+        marker.bindPopup(mtlPopupHtml(p), {maxWidth:260});
+        mtlMarkers[p.name] = marker;
+      });
+    });
+    setTimeout(function(){ mtlMap.invalidateSize(); refreshItinPanel(); }, 100);
+  }, 50);
+}
+
+var mtplMap = null;
+var mtplMarkers = {};
+
+function renderMontpelier(){
+  var m = document.getElementById('main');
+  var fitLabels = {all:'All', kid:'Kid', mom:'Mom', adult:'Anna'};
+
+  // Map + intro panel
+  var html = ''
+    + '<div class="panel">'
+      + '<div class="sect">Montpelier · you got this</div>'
+      + '<p style="margin-bottom:8px">Solo with Inez 6/29–7/2, then Lola joins. Quick reminders so the driving + week aren\'t in your head:</p>'
+      + '<ul class="driving-list">';
+  MTPL_DRIVING.forEach(function(d){ html += '<li>'+d+'</li>'; });
+  html += '</ul></div>';
+
+  html += '<div class="panel">'
+        + '<div class="sect">The map</div>'
+        + '<div id="mtpl-map"></div>'
+        + '<p style="font-size:12px;color:var(--muted);margin:0">Tap any pin or list row below to focus.</p>'
+        + '</div>';
+
+  // Week schedule
+  html += '<div class="panel"><div class="sect">After-camp plan · M-F</div>';
+  MTPL_WEEK.forEach(function(w){
+    html += '<div class="week-card">'
+          + '<div class="wd">'+w.day+'</div>'
+          + '<div class="wt">'+w.title+'</div>'
+          + '<div class="ws">'+w.suggestion+'</div>'
+          + '</div>';
+  });
+  html += '</div>';
+
+  // Grocery list
+  html += '<div class="panel">'
+        + '<div class="sect">Grocery run · go Tue AM</div>'
+        + '<p style="font-size:13px;color:var(--ink);line-height:1.55;margin:0 0 12px"><b>One Hunger Mountain Co-op trip</b> Tue morning (before camp drop, or right after) covers ~80% of the week. Hit Shaw\'s only if you need bulk basics.</p>'
+        + '<div class="gro-grid">';
+
+  var groSections = [
+    {key:'inezLunches', label:"Inez's camp lunches"},
+    {key:'breakfast',   label:'Breakfast'},
+    {key:'dinners',     label:'2–3 easy dinners'},
+    {key:'household',   label:'Household / extras'}
+  ];
+  groSections.forEach(function(s){
+    var items = MTPL_GROCERY_LIST[s.key] || [];
+    html += '<div class="gro-card"><h4>'+s.label+'</h4><ul>';
+    items.forEach(function(it){ html += '<li>'+it+'</li>'; });
+    html += '</ul></div>';
+  });
+  html += '</div></div>';
+
+  // Categorized list of places
+  MTPL_CATEGORIES.forEach(function(cat){
+    var items = MTPL_PLACES[cat.key] || [];
+    if (!items.length) return;
+    html += '<div class="panel"><div class="sect">'+cat.emoji+' '+cat.label+'</div>';
+    items.forEach(function(p){
+      var fitLabel = fitLabels[p.fit] || '';
+      html += '<div class="mtl-item" data-name="'+p.name.replace(/"/g,'&quot;')+'" data-source="mtpl">'
+            + '<div class="mtl-emoji">'+p.emoji+'</div>'
+            + '<div><div class="mtl-name">'+p.name+'</div><div class="mtl-note">'+p.note+'</div></div>'
+            + '<span class="mtl-fit fit-'+p.fit+'">'+fitLabel+'</span>'
+            + '</div>';
+    });
+    html += '</div>';
+  });
+
+  m.innerHTML = html;
+
+  // Init map
+  setTimeout(function(){
+    if (mtplMap) { mtplMap.remove(); mtplMap = null; mtplMarkers = {}; }
+    mtplMap = L.map('mtpl-map', {zoomControl:true, attributionControl:false}).setView([44.27, -72.58], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom:19}).addTo(mtplMap);
+
+    var bounds = [];
+    Object.keys(MTPL_PLACES).forEach(function(catKey){
+      MTPL_PLACES[catKey].forEach(function(p){
+        var icon = pinIcon(p.emoji, p.fit);
+        var marker = L.marker([p.lat, p.lng], {icon:icon}).addTo(mtplMap);
+        marker.bindPopup(mtlPopupHtml(p), {maxWidth:260});
+        mtplMarkers[p.name] = marker;
+        bounds.push([p.lat, p.lng]);
+      });
+    });
+    if (bounds.length){ mtplMap.fitBounds(bounds, {padding:[30,30], maxZoom:13}); }
+    setTimeout(function(){ mtplMap.invalidateSize(); }, 100);
+
+    document.querySelectorAll('.mtl-item[data-source="mtpl"]').forEach(function(row){
+      row.addEventListener('click', function(){
+        var marker = mtplMarkers[row.dataset.name];
+        if (!marker) return;
+        var ll = marker.getLatLng();
+        mtplMap.flyTo(ll, 15, {duration:.6});
+        setTimeout(function(){ marker.openPopup(); }, 600);
+        document.getElementById('mtpl-map').scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+  }, 50);
+}
+
+function render(){
+  if (active === 'overview') renderOverview();
+  else if (active === 'places') renderPlaces();
+  else if (active === 'montpelier') renderMontpelier();
+  else if (active === 'montreal') renderMontreal();
+  else renderDay(active);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
